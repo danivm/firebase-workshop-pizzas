@@ -22,19 +22,29 @@ class App extends Component {
   state = {
     user: null,
     create: false,
-    pizzas: []
+    pizzas: {},
+    page: 'list'
   }
 
-  addMessage = text => {
-    const { messages } = this.state
-    const time = Date.now()
-    const message = { text, time }
-    messages.push(message)
-    this.setState({ messages })
+  addPizza = newPizza => {
+    const { pizzas } = this.state
+    const id = Date.now()
+    pizzas[id] = newPizza
+    this.setState({ pizzas })
+  }
+
+  deletePizza = id => {
+    const { pizzas } = this.state
+    delete pizzas[id]
+    this.setState({ pizzas })
+  }
+
+  handleClickCreate = () => {
+    this.setState({ page: 'create' })
   }
 
   render () {
-    const { pizzas } = this.state
+    const { pizzas, page } = this.state
     const { classes } = this.props
     return (
       <div className="appContainer">
@@ -47,11 +57,30 @@ class App extends Component {
             >
               Firebase Pizza
             </Typography>
+            <Button
+              color="inherit"
+              onClick={() => {
+                this.setState({ page: 'list' })
+              }}
+            >
+              List
+            </Button>
+            <Button
+              color="inherit"
+              onClick={() => {
+                this.setState({ page: 'create' })
+              }}
+            >
+              Create
+            </Button>
             <Button color="inherit">Login</Button>
           </Toolbar>
         </AppBar>
-        <AddPizza />
-        <MyPizzas pizzas={pizzas} />
+        {page === 'list' ? (
+          <MyPizzas pizzas={pizzas} deletePizza={this.deletePizza} />
+        ) : (
+          <AddPizza addPizza={this.addPizza} />
+        )}
       </div>
     )
   }
