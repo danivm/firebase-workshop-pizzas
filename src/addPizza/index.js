@@ -3,14 +3,16 @@ import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
 import PizzaIcon from '@material-ui/icons/LocalPizza'
 import Typography from '@material-ui/core/Typography'
-
+import LinearProgress from '@material-ui/core/LinearProgress'
+import storage from '../firebase'
 import './index.scss'
 
 class AddPizza extends Component {
   state = {
     name: '',
     desc: '',
-    image: null
+    image: null,
+    uploadValue: 0
   }
 
   handleChange = name => event => {
@@ -26,7 +28,36 @@ class AddPizza extends Component {
     this.setState({ name: '', desc: '', image: null })
   }
 
+  handleChangeFile = e => {
+    const file = e.target.files[0]
+    const id = Date.now()
+    const storageRef = storage.ref(`pizzas/${id}`)
+    const task = storageRef.put(file)
+
+    task.on(
+      'state_changed',
+      snapshot => {
+        let percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        this.setState({
+          uploadValue: percentage
+        })
+      },
+      error => {
+        console.error(error.message)
+      },
+      () => {
+        // Upload complete
+        task.snapshot.ref.getDownloadURL().then(downloadURL => {
+          this.setState({
+            image: downloadURL
+          })
+        })
+      }
+    )
+  }
+
   render () {
+    const { uploadValue, image } = this.state
     return (
       <div className="addPizza">
         <Typography
@@ -38,7 +69,20 @@ class AddPizza extends Component {
           Add a new pizza!
         </Typography>
         <form className="addPizza-form" onSubmit={this.handleSubmit}>
-          <input type="file" onChange={this.handleChange('image')} />
+          {uploadValue > 0 &&
+            uploadValue < 100 && (
+            <LinearProgress
+              variant="determinate"
+              value={uploadValue}
+              max="100"
+            >
+              {uploadValue} %
+            </LinearProgress>
+          )}
+          {uploadValue === 0 && (
+            <input type="file" onChange={this.handleChangeFile} />
+          )}
+          {image && <img className="addPizza-image" src={image} />}
           <TextField
             id="name"
             className="addPizza-form-input addPizza-form-name"
